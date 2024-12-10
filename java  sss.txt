@@ -1,0 +1,95 @@
+package com.example.mad_assignment;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity {
+    databasehelper db;
+    EditText editTextName;
+    Button buttonAdd, buttonUpdate, buttonDelete;
+    ListView listViewData;
+    String selectedId;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        db = new databasehelper(this);
+        editTextName = findViewById(R.id.editTextName);
+        buttonAdd = findViewById(R.id.buttonAdd);
+        buttonUpdate = findViewById(R.id.buttonUpdate);
+        buttonDelete = findViewById(R.id.buttonDelete);
+        listViewData = findViewById(R.id.listViewData);
+
+        buttonAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = editTextName.getText().toString();
+                if (!name.isEmpty()) {
+                    db.insertData(name);
+                    editTextName.setText("");
+                    populateListView();
+                }
+            }
+        });
+
+        buttonUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = editTextName.getText().toString();
+                if (!name.isEmpty() && selectedId != null) {
+                    db.updateData(selectedId, name);
+                    editTextName.setText("");
+                    populateListView();
+                    selectedId = null; // Reset the selectedId
+                }
+            }
+        });
+
+        buttonDelete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (selectedId != null) {
+                    db.deleteData(selectedId);
+                    editTextName.setText("");
+                    populateListView();
+                    selectedId = null; // Reset the selectedId
+                }
+            }
+        });
+
+        listViewData.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Cursor cursor = db.getAllData();
+                if (cursor.moveToPosition(position)) {
+                    selectedId = cursor.getString(0); // Get the ID
+                    String name = cursor.getString(1); // Get the name
+                    editTextName.setText(name);
+                }
+            }
+        });
+
+        populateListView();
+    }
+
+    private void populateListView() {
+        Cursor cursor = db.getAllData();
+        ArrayList<String> listData = new ArrayList<>();
+
+        while (cursor.moveToNext()) {
+            listData.add(cursor.getString(1)); // Get the name column
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listData);
+        listViewData.setAdapter(adapter);
+    }
+}
